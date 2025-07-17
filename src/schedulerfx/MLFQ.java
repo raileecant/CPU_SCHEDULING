@@ -1,5 +1,4 @@
-package schedulerfx;
-
+package src.schedulerfx;
 import java.util.*;
 
 public class MLFQ implements Algorithm {

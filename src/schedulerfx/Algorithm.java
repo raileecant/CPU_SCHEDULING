@@ -1,4 +1,4 @@
-package schedulerfx;
+package src.schedulerfx;
 
 import java.util.List;
 

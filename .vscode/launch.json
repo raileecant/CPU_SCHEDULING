@@ -3,6 +3,20 @@
   "configurations": [
     {
       "type": "java",
+      "name": "SchedulerSwing",
+      "request": "launch",
+      "mainClass": "schedulerfx.SchedulerSwing",
+      "projectName": "CPU_SCHEDULING_7af00173"
+    },
+    {
+      "type": "java",
+      "name": "SchedulerSwing",
+      "request": "launch",
+      "mainClass": "SchedulerSwing",
+      "projectName": "CPU_SCHEDULING_7af00173"
+    },
+    {
+      "type": "java",
       "name": "Run JavaFX App",
       "request": "launch",
       "mainClass": "schedulerfx.SchedulerFX",

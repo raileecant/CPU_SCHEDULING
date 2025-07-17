@@ -1,4 +1,4 @@
-package schedulerfx;
+package src.schedulerfx;
 
 public class Process {
     public String id;
