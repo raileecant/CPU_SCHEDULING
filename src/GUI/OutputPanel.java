@@ -1,4 +1,4 @@
-package src.schedulerfx;
+package src.GUI;
 import javax.swing.*;
 
 public class OutputPanel extends JPanel {

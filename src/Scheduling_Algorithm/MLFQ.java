@@ -1,5 +1,7 @@
-package src.schedulerfx;
+package src.Scheduling_Algorithm;
 import java.util.*;
+
+import src.GUI.Process;
 
 public class MLFQ implements Algorithm {
     private List<String> gantt = new ArrayList<>();

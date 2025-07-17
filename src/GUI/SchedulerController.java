@@ -1,4 +1,4 @@
-package src.schedulerfx;
+package src.GUI;
 
 public class SchedulerController {
     public InputPanel inputPanel;

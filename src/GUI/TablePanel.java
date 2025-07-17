@@ -1,4 +1,4 @@
-package src.schedulerfx;
+package src.GUI;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
