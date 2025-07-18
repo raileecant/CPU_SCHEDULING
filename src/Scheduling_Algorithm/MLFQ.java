@@ -8,7 +8,8 @@ public class MLFQ implements Algorithm {
 
     @Override
     public void simulate(List<Process> processes, int tq) {
-        Queue<Process>[] queues = new Queue[3];
+        @SuppressWarnings("unchecked")
+        Queue<Process>[] queues = (Queue<Process>[]) new Queue[3];
         for (int i = 0; i < 3; i++) queues[i] = new LinkedList<>();
 
         processes.sort(Comparator.comparingInt(p -> p.arrivalTime));
