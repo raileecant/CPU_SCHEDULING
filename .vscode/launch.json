@@ -3,6 +3,34 @@
   "configurations": [
     {
       "type": "java",
+      "name": "Shedulerui",
+      "request": "launch",
+      "mainClass": "src.GUI.Shedulerui",
+      "projectName": "CPU_SCHEDULING_7af00173"
+    },
+    {
+      "type": "java",
+      "name": "Scheduler",
+      "request": "launch",
+      "mainClass": "src.GUI.Scheduler",
+      "projectName": "CPU_SCHEDULING_7af00173"
+    },
+    {
+      "type": "java",
+      "name": "SchedulerSwing",
+      "request": "launch",
+      "mainClass": "src.GUI.SchedulerSwing",
+      "projectName": "CPU_SCHEDULING_7af00173"
+    },
+    {
+      "type": "java",
+      "name": "ALLGUI",
+      "request": "launch",
+      "mainClass": "src.GUI.ALLGUI",
+      "projectName": "CPU_SCHEDULING_7af00173"
+    },
+    {
+      "type": "java",
       "name": "SchedulerSwing",
       "request": "launch",
       "mainClass": "schedulerfx.SchedulerSwing",

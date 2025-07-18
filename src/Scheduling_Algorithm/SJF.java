@@ -2,7 +2,7 @@ package src.Scheduling_Algorithm;
 
 import java.util.*;
 
-import src.GUI.Process;
+import bin.Process;
 
 public class SJF implements Algorithm {
     private List<String> gantt = new ArrayList<>();

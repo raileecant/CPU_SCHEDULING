@@ -2,7 +2,7 @@ package src.Scheduling_Algorithm;
 
 import java.util.List;
 
-import src.GUI.Process;
+import bin.Process;
 
 public interface Algorithm {
     void simulate(List<Process> processes, int timeQuantum);
