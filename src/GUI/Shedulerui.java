@@ -46,10 +46,11 @@ public class Shedulerui extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         try { UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel"); } catch (Exception e) { e.printStackTrace(); }
         setSize(1360, 900);
-        setResizable(false);
+        setResizable(true);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
         ((JPanel) getContentPane()).setBorder(new EmptyBorder(10, 10, 10, 10));
+        getContentPane().setBackground(new Color(10, 25, 50));
 
         // --- Panel Creation ---
         JPanel leftPanel = createLeftPanel();
@@ -211,7 +212,7 @@ public class Shedulerui extends JFrame {
         ganttScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
         ganttScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         wrapper.add(ganttScrollPane, BorderLayout.CENTER);
-        wrapper.setPreferredSize(new Dimension(0, 80));
+        wrapper.setPreferredSize(new Dimension(0, 130));
         return wrapper;
     }
     
@@ -589,7 +590,7 @@ class FCFS extends BaseScheduler {
             if (!state.readyQueue.isEmpty()) {
                 state.readyQueue.sort(Comparator.comparingInt((Process p) -> p.arrivalTime).thenComparingInt(p -> p.id));
                 state.runningProcess = state.readyQueue.remove(0);
-                
+
                 if (!state.runningProcess.started) {
                     state.runningProcess.responseTime = state.currentTime - 1 - state.runningProcess.arrivalTime;
                     state.runningProcess.started = true;
