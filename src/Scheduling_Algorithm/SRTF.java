@@ -10,8 +10,6 @@ public class SRTF implements Algorithm {
     @Override
     public void simulate(List<Process> processes, int tq) {
         int time = 0, completed = 0, n = processes.size();
-        Process current = null;
-        int minRemainingTime = Integer.MAX_VALUE;
 
         while (completed < n) {
             Process selected = null;
