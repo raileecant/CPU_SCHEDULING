@@ -21,6 +21,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 
 
+
 public class Shedulerui extends JFrame {
 
     private JTextField arrivalField, burstField, rrQuantumField, contextSwitchField;
@@ -30,7 +31,9 @@ public class Shedulerui extends JFrame {
     private JTable inputQueueTable, resultsTable;
     private DefaultTableModel inputQueueModel, resultsModel;
     private JLabel avgTurnaroundLabel, avgWaitingLabel, avgResponseLabel, totalTimeLabel, statusLabel;
+    private JLabel quantumLabel;
     private JPanel ganttChartPanel;
+    private JPanel timeAxisPanel;
     private JScrollPane ganttScrollPane;
 
     // --- Data & Simulation State ---
@@ -45,8 +48,8 @@ public class Shedulerui extends JFrame {
         setTitle("CPU Scheduling Simulator 3.9 (Live)");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         try { UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel"); } catch (Exception e) { e.printStackTrace(); }
-        setSize(1360, 900);
-        setResizable(true);
+        setSize(1200, 825);
+        setResizable(false);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
         ((JPanel) getContentPane()).setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -76,7 +79,7 @@ public class Shedulerui extends JFrame {
     private JPanel createRightPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setPreferredSize(new Dimension(640, 0));
+        panel.setPreferredSize(new Dimension(650, 0));
         panel.add(createRealTimeStatusPanel());
         panel.add(Box.createRigidArea(new Dimension(0, 10)));
         panel.add(createPerformanceMetricsPanel());
@@ -178,7 +181,8 @@ public class Shedulerui extends JFrame {
         algorithmComboBox = new JComboBox<>(algorithms);
         panel.add(algorithmComboBox, gbc);
         gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
-        panel.add(new JLabel("Quantum(s):"), gbc);
+        quantumLabel = new JLabel("Quantum(s):");
+        panel.add(quantumLabel, gbc);
         gbc.gridx = 1; gbc.gridy = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
         rrQuantumField = new JTextField("8,16,32", 10);
         panel.add(rrQuantumField, gbc);
@@ -203,18 +207,52 @@ public class Shedulerui extends JFrame {
     }
 
     private JPanel createGanttChartPanel() {
-        JPanel wrapper = new JPanel(new BorderLayout());
-        wrapper.setBorder(new TitledBorder("Gantt Chart"));
-        ganttChartPanel = new JPanel();
-        ganttChartPanel.setLayout(new BoxLayout(ganttChartPanel, BoxLayout.X_AXIS));
-        ganttChartPanel.setBackground(Color.WHITE);
-        ganttScrollPane = new JScrollPane(ganttChartPanel);
-        ganttScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
-        ganttScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        wrapper.add(ganttScrollPane, BorderLayout.CENTER);
-        wrapper.setPreferredSize(new Dimension(0, 130));
-        return wrapper;
-    }
+    JPanel wrapper = new JPanel(new BorderLayout());
+    wrapper.setBorder(new TitledBorder("Gantt Chart"));
+
+    // Main panel for process blocks
+    ganttChartPanel = new JPanel();
+    ganttChartPanel.setLayout(new BoxLayout(ganttChartPanel, BoxLayout.X_AXIS));
+    ganttChartPanel.setBackground(Color.WHITE);
+    ganttScrollPane = new JScrollPane(ganttChartPanel);
+    ganttScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+    ganttScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+    // Panel for the time axis ticks and numbers
+    timeAxisPanel = new JPanel() {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if (currentState == null || currentState.currentTime == 0) return;
+
+            int width = getWidth();
+            int totalTime = currentState.currentTime;
+            
+            // Dynamically determine the interval for time markers to avoid clutter
+            int interval = 1;
+            if (totalTime > 150) interval = 20;
+            else if (totalTime > 75) interval = 10;
+            else if (totalTime > 20) interval = 5;
+
+            g.setColor(Color.BLACK);
+            for (int t = 0; t <= totalTime; t++) {
+                int x = (int) ((double) t / totalTime * width);
+                if (t % interval == 0) {
+                    g.drawLine(x, 0, x, 8); // Taller tick mark
+                    g.drawString(String.valueOf(t), x + 2, 20);
+                } else if (totalTime < 50) {
+                    g.drawLine(x, 0, x, 4); // Shorter tick mark
+                }
+            }
+        }
+    };
+    timeAxisPanel.setPreferredSize(new Dimension(0, 25));
+
+    wrapper.add(ganttScrollPane, BorderLayout.CENTER);
+    wrapper.add(timeAxisPanel, BorderLayout.SOUTH);
+    wrapper.setPreferredSize(new Dimension(0, 155)); // Increased height for axis
+    return wrapper;
+}
     
     private void setupActionListeners() {
         addProcessButton.addActionListener(this::addProcessAction);
@@ -229,16 +267,47 @@ public class Shedulerui extends JFrame {
         onAlgorithmChange(null);
     }
     
-    private void onAlgorithmChange(ActionEvent e) {
-        String selected = (String) algorithmComboBox.getSelectedItem();
-        if (selected != null) {
-            boolean usesQuantum = selected.equals("Round Robin") || selected.equals("MLFQ");
-            rrQuantumField.setEnabled(usesQuantum);
+    // Replace your existing onAlgorithmChange method with this one
+private void onAlgorithmChange(ActionEvent e) {
+    String selected = (String) algorithmComboBox.getSelectedItem();
+    if (selected == null) return;
+
+    boolean usesQuantum = selected.equals("Round Robin") || selected.equals("MLFQ");
+    boolean isPreemptive = selected.equals("SRTF") || usesQuantum;
+
+    // Enable/disable the quantum and context switch fields
+    quantumLabel.setEnabled(usesQuantum);
+    rrQuantumField.setEnabled(usesQuantum);
+    contextSwitchField.setEnabled(isPreemptive);
+
+    // Dynamically change the label and tooltip based on the algorithm
+    switch (selected) {
+        case "Round Robin":
+            quantumLabel.setText("Quantum:");
+            String helpTextRR = "Enter a single time quantum for Round Robin.";
+            quantumLabel.setToolTipText(helpTextRR);
+            rrQuantumField.setToolTipText(helpTextRR);
+            // If the current text has commas, intelligently use only the first part
+            if (rrQuantumField.getText().contains(",")) {
+                rrQuantumField.setText(rrQuantumField.getText().split(",")[0].trim());
+            }
+            break;
+
+        case "MLFQ":
+            quantumLabel.setText("Quantum(s):");
+            String helpTextMLFQ = "Enter comma-separated quanta for each priority level (e.g., 8,16,32).";
+            quantumLabel.setToolTipText(helpTextMLFQ);
+            rrQuantumField.setToolTipText(helpTextMLFQ);
+            break;
             
-            boolean isPreemptive = selected.equals("SRTF") || selected.equals("Round Robin") || selected.equals("MLFQ");
-            contextSwitchField.setEnabled(isPreemptive);
-        }
+        default:
+            // Handles FCFS, SJF, SRTF where quantum is not used
+            quantumLabel.setText("Quantum(s):");
+            quantumLabel.setToolTipText(null);
+            rrQuantumField.setToolTipText(null);
+            break;
     }
+}
     
     private void addProcessAction(ActionEvent e) {
         try {
@@ -426,7 +495,7 @@ public class Shedulerui extends JFrame {
         }
     }
 
-    private void updateLiveUI() {
+private void updateLiveUI() {
     totalTimeLabel.setText("Total Execution Time: " + currentState.currentTime);
     statusLabel.setText(currentState.status);
 
@@ -448,14 +517,15 @@ public class Shedulerui extends JFrame {
 
     ganttChartPanel.removeAll();
     Color[] colors = {new Color(217, 83, 79), new Color(91, 192, 222), new Color(240, 173, 78), new Color(92, 184, 92), new Color(104, 93, 156), new Color(2, 117, 216)};
-    int totalGanttWidth = ganttScrollPane.getViewport().getWidth();
+    int totalGanttWidth = Math.max(1200, ganttScrollPane.getViewport().getWidth()); // Set a min width for readability
     int totalTime = Math.max(1, currentState.currentTime);
 
     for (GanttChartEntry entry : currentState.ganttChart) {
         int duration = entry.endTime - entry.startTime;
-        int width = Math.max(1, (int) Math.round((double) duration / totalTime * totalGanttWidth));
+        int width = (int) Math.round((double) duration / totalTime * totalGanttWidth);
 
-        JPanel block = new JPanel(new BorderLayout());
+        // Use our new custom panel to get tooltips
+        GanttBlockPanel block = new GanttBlockPanel(entry);
         block.setPreferredSize(new Dimension(width, 60));
         block.setMaximumSize(new Dimension(width, 60));
         block.setMinimumSize(new Dimension(width, 60));
@@ -463,7 +533,6 @@ public class Shedulerui extends JFrame {
         String labelText;
         Color labelColor;
         
-        // This block determines the text and color for the Gantt entry
         if (entry.processId == 0) {
             block.setBackground(new Color(235, 235, 235));
             block.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
@@ -482,14 +551,16 @@ public class Shedulerui extends JFrame {
             labelColor = Color.WHITE;
         }
         
-        // A single JLabel is created here, after all properties have been determined
         JLabel label = new JLabel(labelText, SwingConstants.CENTER);
         label.setForeground(labelColor);
         block.add(label, BorderLayout.CENTER);
         ganttChartPanel.add(block);
     }
+    
+    // Repaint both the chart and the new time axis
     ganttChartPanel.revalidate();
     ganttChartPanel.repaint();
+    timeAxisPanel.repaint();
 }
     
     private void calculateAndDisplayFinalMetrics() {
@@ -668,97 +739,141 @@ class SJF extends BaseScheduler {
 }
 
 // Replace your existing SRTF class
+// Replace your existing SRTF class with this one
 class SRTF extends BaseScheduler {
     @Override
     public void step(SchedulerState state) {
-        state.currentTime++;
+        // --- 1. Handle Arrivals & Preemption ---
         handleArrivals(state);
-        
+
+        // Check for preemption: If a process is running, see if a newly arrived process is shorter.
         if (state.runningProcess != null) {
-            state.readyQueue.add(state.runningProcess);
-            state.runningProcess = null;
-        }
-        
-        if (handleContextSwitch(state)) return;
+            // Find the shortest process in the ready queue
+            Process shortestInQueue = state.readyQueue.stream()
+                .min(Comparator.comparingInt(p -> p.remainingBurstTime))
+                .orElse(null);
 
-        if (!state.readyQueue.isEmpty()) {
-            state.readyQueue.sort(Comparator.comparingInt(p -> p.remainingBurstTime));
-            Process nextProcess = state.readyQueue.remove(0);
-
-            Process lastProcess = (Process) state.algorithmState.get("lastProcess");
-            if (lastProcess != nextProcess) {
-                state.algorithmState.put("lastProcess", nextProcess);
-                startContextSwitch(state, nextProcess);
-                return;
+            // If a process in the queue is shorter than the running one, preempt!
+            if (shortestInQueue != null && shortestInQueue.remainingBurstTime < state.runningProcess.remainingBurstTime) {
+                state.readyQueue.add(state.runningProcess);
+                state.runningProcess = null;
             }
-            
-            state.runningProcess = nextProcess;
-            state.status = "Running P" + state.runningProcess.id;
-            state.runningProcess.remainingBurstTime--;
-            updateGantt(state, state.runningProcess.id, -1);
+        }
 
+        // --- 2. Select a Process if CPU is Idle ---
+        if (state.runningProcess == null && !state.readyQueue.isEmpty()) {
+            // Sort by remaining time, then by PID as a tie-breaker
+            state.readyQueue.sort(Comparator.comparingInt((Process p) -> p.remainingBurstTime).thenComparingInt(p -> p.id));
+            state.runningProcess = state.readyQueue.remove(0);
+        }
+
+        // --- 3. Execute the Current Tick ---
+        if (state.runningProcess != null) {
+            // Set response time if this is the first time the process runs
+            if (!state.runningProcess.started) {
+                state.runningProcess.responseTime = state.currentTime - state.runningProcess.arrivalTime;
+                state.runningProcess.started = true;
+            }
+
+            state.status = "Running P" + state.runningProcess.id;
+            updateGantt(state, state.runningProcess.id, -1);
+            state.runningProcess.remainingBurstTime--;
+
+            // Check if the process finished
             if (state.runningProcess.remainingBurstTime == 0) {
-                // The fix is here: passing the completion time
-                finishProcess(state, state.runningProcess, state.currentTime);
-                state.algorithmState.remove("lastProcess");
+                // The process finishes at the end of this tick
+                finishProcess(state, state.runningProcess, state.currentTime + 1);
             }
         } else {
-            state.runningProcess = null;
+            // If nothing is running, the CPU is idle
             state.status = "Idle";
+            if (!state.remainingProcesses.isEmpty() || !state.readyQueue.isEmpty()) {
+                updateGantt(state, 0, -1); // Draw an idle block
+            }
         }
+
+        // --- 4. Advance Time ---
+        state.currentTime++;
     }
 }
 
-// Replace your existing RoundRobin class
+// Replace your existing RoundRobin class with this one
 class RoundRobin extends BaseScheduler {
-    private int quantum;
+    private final int quantum;
+
     public RoundRobin(int quantum) { this.quantum = quantum; }
 
     @Override
     public void step(SchedulerState state) {
-        state.currentTime++;
         handleArrivals(state);
 
-        Integer slice = (Integer) state.algorithmState.getOrDefault("slice", quantum);
-        if (state.runningProcess != null) {
-            slice--;
-            state.algorithmState.put("slice", slice);
+        // If a context switch is in progress, let it finish and do nothing else this tick.
+        if (handleContextSwitch(state)) {
+            state.currentTime++;
+            return;
         }
 
-        if (handleContextSwitch(state)) return;
-        
+        // If a process was running, check if its time slice is up or if it's finished.
         if (state.runningProcess != null) {
-            state.status = "Running P" + state.runningProcess.id;
-            state.runningProcess.remainingBurstTime--;
-            updateGantt(state, state.runningProcess.id, -1);
+            Integer slice = (Integer) state.algorithmState.get("slice");
 
             if (state.runningProcess.remainingBurstTime == 0) {
-                // The fix is here: passing the completion time
+                // Process finished its job.
                 finishProcess(state, state.runningProcess, state.currentTime);
-                state.algorithmState.put("slice", quantum);
+                state.runningProcess = null; // Free the CPU.
             } else if (slice == 0) {
-                state.readyQueue.add(state.runningProcess);
-                startContextSwitch(state, null);
-                state.algorithmState.put("slice", quantum);
+                // Process's time slice is over, but it's not done.
+                state.readyQueue.add(state.runningProcess); // Add it to the back of the queue.
+                state.runningProcess = null; // Free the CPU.
+            }
+        }
+
+        // If the CPU is now free, select the next process from the ready queue.
+        if (state.runningProcess == null && !state.readyQueue.isEmpty()) {
+            Process nextProcess = state.readyQueue.remove(0);
+            state.algorithmState.put("slice", quantum); // Reset the quantum for the new process.
+            startContextSwitch(state, nextProcess);
+        }
+        
+        // If a process is running (either continuing or just started after a context switch)...
+        if (state.runningProcess != null) {
+            // Set response time if this is the first time the process runs.
+            if (!state.runningProcess.started) {
+                state.runningProcess.responseTime = state.currentTime - state.runningProcess.arrivalTime;
+                state.runningProcess.started = true;
+            }
+            
+            // Execute one tick of work.
+            state.status = "Running P" + state.runningProcess.id;
+            updateGantt(state, state.runningProcess.id, -1);
+            state.runningProcess.remainingBurstTime--;
+            
+            // Decrement its time slice for this tick.
+            Integer slice = (Integer) state.algorithmState.get("slice");
+            state.algorithmState.put("slice", slice - 1);
+        } else {
+            // If nothing is running and no context switch is happening, the CPU is idle.
+            state.status = "Idle";
+            if (!state.remainingProcesses.isEmpty() || !state.readyQueue.isEmpty()) {
+                updateGantt(state, 0, -1);
             }
         }
         
-        if (state.runningProcess == null && !state.readyQueue.isEmpty()) {
-            startContextSwitch(state, state.readyQueue.remove(0));
-        } else if (state.runningProcess == null) {
-            state.status = "Idle";
-        }
+        // Advance the simulation clock for the next tick.
+        state.currentTime++;
     }
 }
 
-// Replace your existing MLFQ class
+// Replace your existing MLFQ class with this one
 class MLFQ extends BaseScheduler {
-    private int[] quanta;
+    private final int[] quanta;
+
     public MLFQ(int[] quanta) { this.quanta = quanta; }
 
     @Override
     @SuppressWarnings("unchecked")
     public void step(SchedulerState state) {
+        // Initialize the queues on the first run.
         if (!state.algorithmState.containsKey("queues")) {
             List<Queue<Process>> queues = new ArrayList<>();
             for (int i = 0; i < quanta.length; i++) queues.add(new LinkedList<>());
@@ -766,48 +881,65 @@ class MLFQ extends BaseScheduler {
         }
         List<Queue<Process>> queues = (List<Queue<Process>>) state.algorithmState.get("queues");
 
-        state.currentTime++;
         handleArrivals(state);
 
-        Integer slice = (Integer) state.algorithmState.getOrDefault("slice", 0);
-        if (state.runningProcess != null) {
-            slice--;
-            state.algorithmState.put("slice", slice);
+        if (handleContextSwitch(state)) {
+            state.currentTime++;
+            return;
         }
 
-        if (handleContextSwitch(state)) return;
-        
+        // If a process was running, check if it finished or its time slice expired.
         if (state.runningProcess != null) {
-            state.status = "Running P" + state.runningProcess.id + " [Q" + state.runningProcess.priority + "]";
-            state.runningProcess.remainingBurstTime--;
-            updateGantt(state, state.runningProcess.id, state.runningProcess.priority);
+            Integer slice = (Integer) state.algorithmState.get("slice");
 
             if (state.runningProcess.remainingBurstTime == 0) {
-                // The fix is here: passing the completion time
+                // Process finished its job.
                 finishProcess(state, state.runningProcess, state.currentTime);
+                state.runningProcess = null;
             } else if (slice == 0) {
-                int nextQueue = Math.min(state.runningProcess.priority + 1, quanta.length - 1);
-                state.runningProcess.priority = nextQueue;
-                queues.get(nextQueue).add(state.runningProcess);
-                startContextSwitch(state, null);
+                // Time slice is over. Demote the process to the next-lower queue.
+                int nextQueueIndex = Math.min(state.runningProcess.priority + 1, quanta.length - 1);
+                state.runningProcess.priority = nextQueueIndex;
+                queues.get(nextQueueIndex).add(state.runningProcess);
+                state.runningProcess = null;
             }
         }
-        
+
+        // If the CPU is now free, find the highest-priority process to run.
         if (state.runningProcess == null) {
             for (int i = 0; i < queues.size(); i++) {
                 if (!queues.get(i).isEmpty()) {
-                    Process next = queues.get(i).poll();
-                    next.priority = i;
+                    Process nextProcess = queues.get(i).poll();
+                    nextProcess.priority = i;
                     state.algorithmState.put("slice", quanta[i]);
-                    startContextSwitch(state, next);
+                    startContextSwitch(state, nextProcess);
                     break;
                 }
             }
         }
-        
-        if (state.runningProcess == null) {
+
+        // If a process is running, execute one tick.
+        if (state.runningProcess != null) {
+            if (!state.runningProcess.started) {
+                state.runningProcess.responseTime = state.currentTime - state.runningProcess.arrivalTime;
+                state.runningProcess.started = true;
+            }
+
+            state.status = "Running P" + state.runningProcess.id + " [Q" + state.runningProcess.priority + "]";
+            updateGantt(state, state.runningProcess.id, state.runningProcess.priority);
+            state.runningProcess.remainingBurstTime--;
+
+            Integer slice = (Integer) state.algorithmState.get("slice");
+            state.algorithmState.put("slice", slice - 1);
+        } else {
+            // If nothing is running, the CPU is idle.
             state.status = "Idle";
+            if (!state.remainingProcesses.isEmpty() || !queues.stream().allMatch(Queue::isEmpty)) {
+                updateGantt(state, 0, -1);
+            }
         }
+
+        state.currentTime++;
     }
 }
 
@@ -834,7 +966,30 @@ class Process {
     }
 }
 
+/**
+ * A custom panel for a single block in the Gantt chart that displays
+ * detailed information in a tooltip on mouse hover.
+ */
+class GanttBlockPanel extends JPanel {
+    private final String tooltipText;
 
+    public GanttBlockPanel(GanttChartEntry entry) {
+        super(new BorderLayout());
+
+        // Prepare the detailed tooltip text based on the entry type
+        if (entry.processId > 0) {
+            tooltipText = String.format(
+                "<html><b>Process:</b> P%d<br><b>Start Time:</b> %d<br><b>End Time:</b> %d<br><b>Duration:</b> %d</html>",
+                entry.processId, entry.startTime, entry.endTime, (entry.endTime - entry.startTime)
+            );
+        } else if (entry.processId == 0) {
+            tooltipText = "<html><b>Status:</b> Idle</html>";
+        } else {
+            tooltipText = "<html><b>Status:</b> Context Switch</html>";
+        }
+        setToolTipText(tooltipText);
+    }
+}
 
 class GanttChartEntry {
     int processId, startTime, endTime, queueLevel;
