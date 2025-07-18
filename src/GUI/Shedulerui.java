@@ -784,6 +784,7 @@ class Process {
     int id, arrivalTime, burstTime, remainingBurstTime, priority;
     int completionTime, turnaroundTime, waitingTime, responseTime;
     boolean started = false;
+
     public Process(int id, int arrivalTime, int burstTime) {
         this.id = id; this.arrivalTime = arrivalTime; this.burstTime = burstTime; this.remainingBurstTime = burstTime;
     }
