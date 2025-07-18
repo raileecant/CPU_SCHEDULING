@@ -1,10 +1,5 @@
 package src.GUI;
 
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.BufferedWriter;
@@ -19,6 +14,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.DefaultTableModel;
 
 
 public class Shedulerui extends JFrame {
@@ -174,7 +174,7 @@ public class Shedulerui extends JFrame {
         gbc.insets = new Insets(2, 5, 2, 5); gbc.anchor = GridBagConstraints.WEST;
         gbc.gridx = 0; gbc.gridy = 0; panel.add(new JLabel("Algorithm:"), gbc);
         gbc.gridx = 1; gbc.gridy = 0; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1;
-        String[] algorithms = {"FCFS", "SJF", "SRTF", "Round Robin", "MLFQ"};
+        String[] algorithms = {"FCFS", "SJF (Non-Pre-emptive)", "SRTF", "Round Robin", "MLFQ"};
         algorithmComboBox = new JComboBox<>(algorithms);
         panel.add(algorithmComboBox, gbc);
         gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
@@ -427,56 +427,70 @@ public class Shedulerui extends JFrame {
     }
 
     private void updateLiveUI() {
-        totalTimeLabel.setText("Total Execution Time: " + currentState.currentTime);
-        statusLabel.setText(currentState.status);
+    totalTimeLabel.setText("Total Execution Time: " + currentState.currentTime);
+    statusLabel.setText(currentState.status);
 
-        resultsModel.setRowCount(0);
-        List<Process> allProcesses = new ArrayList<>();
-        allProcesses.addAll(currentState.completedProcesses);
-        allProcesses.addAll(currentState.readyQueue);
-        if(currentState.runningProcess != null && !allProcesses.contains(currentState.runningProcess)) {
-            allProcesses.add(currentState.runningProcess);
-        }
-        allProcesses.sort(Comparator.comparingInt(p -> p.id));
-        for (Process p : allProcesses) {
-            String status = "Waiting";
-            if (p.remainingBurstTime == 0) status = "Finished";
-            else if (currentState.runningProcess != null && currentState.runningProcess.id == p.id) status = "Running";
-            
-            resultsModel.addRow(new Object[]{ p.id, status, p.remainingBurstTime, p.completionTime, p.turnaroundTime, p.waitingTime, p.responseTime});
+    resultsModel.setRowCount(0);
+    List<Process> allProcesses = new ArrayList<>();
+    allProcesses.addAll(currentState.completedProcesses);
+    allProcesses.addAll(currentState.readyQueue);
+    if(currentState.runningProcess != null && !allProcesses.contains(currentState.runningProcess)) {
+        allProcesses.add(currentState.runningProcess);
+    }
+    allProcesses.sort(Comparator.comparingInt(p -> p.id));
+    for (Process p : allProcesses) {
+        String status = "Waiting";
+        if (p.remainingBurstTime == 0) status = "Finished";
+        else if (currentState.runningProcess != null && currentState.runningProcess.id == p.id) status = "Running";
+
+        resultsModel.addRow(new Object[]{ p.id, status, p.remainingBurstTime, p.completionTime, p.turnaroundTime, p.waitingTime, p.responseTime});
+    }
+
+    ganttChartPanel.removeAll();
+    Color[] colors = {new Color(217, 83, 79), new Color(91, 192, 222), new Color(240, 173, 78), new Color(92, 184, 92), new Color(104, 93, 156), new Color(2, 117, 216)};
+    int totalGanttWidth = ganttScrollPane.getViewport().getWidth();
+    int totalTime = Math.max(1, currentState.currentTime);
+
+    for (GanttChartEntry entry : currentState.ganttChart) {
+        int duration = entry.endTime - entry.startTime;
+        int width = Math.max(1, (int) Math.round((double) duration / totalTime * totalGanttWidth));
+
+        JPanel block = new JPanel(new BorderLayout());
+        block.setPreferredSize(new Dimension(width, 60));
+        block.setMaximumSize(new Dimension(width, 60));
+        block.setMinimumSize(new Dimension(width, 60));
+        
+        String labelText;
+        Color labelColor;
+        
+        // This block determines the text and color for the Gantt entry
+        if (entry.processId == 0) {
+            block.setBackground(new Color(235, 235, 235));
+            block.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+            labelText = "Idle";
+            labelColor = Color.GRAY;
+        } else if (entry.processId == -1) {
+            block.setBackground(Color.LIGHT_GRAY);
+            block.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+            labelText = "CS";
+            labelColor = Color.DARK_GRAY;
+        } else {
+            block.setBackground(colors[(entry.processId - 1) % colors.length]);
+            block.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+            labelText = "P" + entry.processId;
+            if (entry.queueLevel != -1) labelText += " [Q" + entry.queueLevel + "]";
+            labelColor = Color.WHITE;
         }
         
-        ganttChartPanel.removeAll();
-        Color[] colors = {new Color(217, 83, 79), new Color(91, 192, 222), new Color(240, 173, 78), new Color(92, 184, 92), new Color(104, 93, 156), new Color(2, 117, 216)};
-        int totalGanttWidth = ganttScrollPane.getViewport().getWidth();
-        int totalTime = Math.max(1, currentState.currentTime);
-
-        for (GanttChartEntry entry : currentState.ganttChart) {
-            int duration = entry.endTime - entry.startTime;
-            int width = Math.max(1, (int) Math.round((double) duration / totalTime * totalGanttWidth));
-            
-            JPanel block = new JPanel(new BorderLayout());
-            block.setPreferredSize(new Dimension(width, 60));
-            block.setMaximumSize(new Dimension(width, 60));
-            block.setMinimumSize(new Dimension(width, 60));
-            block.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-            String labelText;
-            if(entry.processId == -1){
-                block.setBackground(Color.LIGHT_GRAY);
-                labelText = "CS";
-            } else {
-                block.setBackground(colors[(entry.processId - 1) % colors.length]);
-                labelText = "P" + entry.processId;
-                if (entry.queueLevel != -1) labelText += " [Q" + entry.queueLevel + "]";
-            }
-            JLabel label = new JLabel(labelText, SwingConstants.CENTER);
-            label.setForeground(Color.WHITE);
-            block.add(label, BorderLayout.CENTER);
-            ganttChartPanel.add(block);
-        }
-        ganttChartPanel.revalidate();
-        ganttChartPanel.repaint();
+        // A single JLabel is created here, after all properties have been determined
+        JLabel label = new JLabel(labelText, SwingConstants.CENTER);
+        label.setForeground(labelColor);
+        block.add(label, BorderLayout.CENTER);
+        ganttChartPanel.add(block);
     }
+    ganttChartPanel.revalidate();
+    ganttChartPanel.repaint();
+}
     
     private void calculateAndDisplayFinalMetrics() {
         double totalTurnaround = 0, totalWaiting = 0, totalResponse = 0;
@@ -526,7 +540,7 @@ abstract class BaseScheduler implements StepBasedScheduler {
             if (state.algorithmState.containsKey("queues")) {
                 ((List<Queue<Process>>) state.algorithmState.get("queues")).get(0).add(p);
             } else {
-                 state.readyQueue.add(p);
+                state.readyQueue.add(p);
             }
         }
     }
@@ -544,13 +558,16 @@ abstract class BaseScheduler implements StepBasedScheduler {
             }
         }
     }
-    
+
     protected void updateGantt(SchedulerState state, int processId, int queueLevel) {
-        int startTime = state.currentTime - 1;
-        if (!state.ganttChart.isEmpty() && state.ganttChart.get(state.ganttChart.size()-1).processId == processId && state.ganttChart.get(state.ganttChart.size()-1).endTime == startTime) {
-            state.ganttChart.get(state.ganttChart.size()-1).endTime = state.currentTime;
+        // Use the current time as the start for the Gantt block.
+        int startTime = state.currentTime;
+        if (state.ganttChart.isEmpty() || state.ganttChart.get(state.ganttChart.size() - 1).processId != processId) {
+            // Add a new entry if the chart is empty or the process has changed.
+            state.ganttChart.add(new GanttChartEntry(processId, startTime, startTime + 1, queueLevel));
         } else {
-            state.ganttChart.add(new GanttChartEntry(processId, startTime, state.currentTime, queueLevel));
+            // Otherwise, just extend the end time of the last block.
+            state.ganttChart.get(state.ganttChart.size() - 1).endTime++;
         }
     }
 
@@ -558,7 +575,7 @@ abstract class BaseScheduler implements StepBasedScheduler {
         if (state.contextSwitchTimeRemaining > 0) {
             state.status = "Context Switching...";
             state.contextSwitchTimeRemaining--;
-            updateGantt(state, -1, -1);
+            updateGantt(state, -1, -1); // -1 for Context Switch
             if (state.contextSwitchTimeRemaining == 0) {
                 state.runningProcess = (Process) state.algorithmState.get("nextProcess");
                 if (state.runningProcess != null && !state.runningProcess.started) {
@@ -570,11 +587,9 @@ abstract class BaseScheduler implements StepBasedScheduler {
         }
         return false;
     }
-    
-    protected void finishProcess(SchedulerState state, Process p) {
-        p.completionTime = state.currentTime;
-        p.turnaroundTime = p.completionTime - p.arrivalTime;
-        p.waitingTime = p.turnaroundTime - p.burstTime;
+
+    protected void finishProcess(SchedulerState state, Process p, int completionTime) {
+        p.calculateFinalMetrics(completionTime); // Use our new helper method
         state.completedProcesses.add(p);
         state.runningProcess = null;
     }
@@ -583,47 +598,53 @@ abstract class BaseScheduler implements StepBasedScheduler {
 class FCFS extends BaseScheduler {
     @Override
     public void step(SchedulerState state) {
-        state.currentTime++;
         handleArrivals(state);
 
         if (state.runningProcess == null) {
             if (!state.readyQueue.isEmpty()) {
                 state.readyQueue.sort(Comparator.comparingInt((Process p) -> p.arrivalTime).thenComparingInt(p -> p.id));
-                state.runningProcess = state.readyQueue.remove(0);
+                Process next = state.readyQueue.get(0);
 
-                if (!state.runningProcess.started) {
-                    state.runningProcess.responseTime = state.currentTime - 1 - state.runningProcess.arrivalTime;
-                    state.runningProcess.started = true;
+                if (state.currentTime >= next.arrivalTime) {
+                    state.runningProcess = state.readyQueue.remove(0);
+                    if (!state.runningProcess.started) {
+                        state.runningProcess.responseTime = state.currentTime - state.runningProcess.arrivalTime;
+                        state.runningProcess.started = true;
+                    }
                 }
             }
         }
 
         if (state.runningProcess != null) {
             state.status = "Running P" + state.runningProcess.id;
-            state.runningProcess.remainingBurstTime--;
             updateGantt(state, state.runningProcess.id, -1);
+            state.runningProcess.remainingBurstTime--;
             if (state.runningProcess.remainingBurstTime == 0) {
-                finishProcess(state, state.runningProcess);
+                finishProcess(state, state.runningProcess, state.currentTime + 1);
             }
         } else {
             state.status = "Idle";
+            // Only draw idle block if the simulation isn't finished yet
+            if (!state.remainingProcesses.isEmpty() || !state.readyQueue.isEmpty()) {
+                updateGantt(state, 0, -1); // Use PID 0 for IDLE
+            }
         }
+        state.currentTime++;
     }
 }
 
 class SJF extends BaseScheduler {
     @Override
     public void step(SchedulerState state) {
-        state.currentTime++;
         handleArrivals(state);
 
         if (state.runningProcess == null) {
             if (!state.readyQueue.isEmpty()) {
+                // The only difference from FCFS: sort by burst time instead of arrival time.
                 state.readyQueue.sort(Comparator.comparingInt(p -> p.burstTime));
                 state.runningProcess = state.readyQueue.remove(0);
-                
                 if (!state.runningProcess.started) {
-                    state.runningProcess.responseTime = state.currentTime - 1 - state.runningProcess.arrivalTime;
+                    state.runningProcess.responseTime = state.currentTime - state.runningProcess.arrivalTime;
                     state.runningProcess.started = true;
                 }
             }
@@ -631,17 +652,22 @@ class SJF extends BaseScheduler {
 
         if (state.runningProcess != null) {
             state.status = "Running P" + state.runningProcess.id;
-            state.runningProcess.remainingBurstTime--;
             updateGantt(state, state.runningProcess.id, -1);
+            state.runningProcess.remainingBurstTime--;
             if (state.runningProcess.remainingBurstTime == 0) {
-                finishProcess(state, state.runningProcess);
+                finishProcess(state, state.runningProcess, state.currentTime + 1);
             }
         } else {
             state.status = "Idle";
+            if (!state.remainingProcesses.isEmpty() || !state.readyQueue.isEmpty()) {
+                updateGantt(state, 0, -1); // Use PID 0 for IDLE
+            }
         }
+        state.currentTime++;
     }
 }
 
+// Replace your existing SRTF class
 class SRTF extends BaseScheduler {
     @Override
     public void step(SchedulerState state) {
@@ -672,7 +698,8 @@ class SRTF extends BaseScheduler {
             updateGantt(state, state.runningProcess.id, -1);
 
             if (state.runningProcess.remainingBurstTime == 0) {
-                finishProcess(state, state.runningProcess);
+                // The fix is here: passing the completion time
+                finishProcess(state, state.runningProcess, state.currentTime);
                 state.algorithmState.remove("lastProcess");
             }
         } else {
@@ -682,6 +709,7 @@ class SRTF extends BaseScheduler {
     }
 }
 
+// Replace your existing RoundRobin class
 class RoundRobin extends BaseScheduler {
     private int quantum;
     public RoundRobin(int quantum) { this.quantum = quantum; }
@@ -705,7 +733,8 @@ class RoundRobin extends BaseScheduler {
             updateGantt(state, state.runningProcess.id, -1);
 
             if (state.runningProcess.remainingBurstTime == 0) {
-                finishProcess(state, state.runningProcess);
+                // The fix is here: passing the completion time
+                finishProcess(state, state.runningProcess, state.currentTime);
                 state.algorithmState.put("slice", quantum);
             } else if (slice == 0) {
                 state.readyQueue.add(state.runningProcess);
@@ -722,6 +751,7 @@ class RoundRobin extends BaseScheduler {
     }
 }
 
+// Replace your existing MLFQ class
 class MLFQ extends BaseScheduler {
     private int[] quanta;
     public MLFQ(int[] quanta) { this.quanta = quanta; }
@@ -753,7 +783,8 @@ class MLFQ extends BaseScheduler {
             updateGantt(state, state.runningProcess.id, state.runningProcess.priority);
 
             if (state.runningProcess.remainingBurstTime == 0) {
-                finishProcess(state, state.runningProcess);
+                // The fix is here: passing the completion time
+                finishProcess(state, state.runningProcess, state.currentTime);
             } else if (slice == 0) {
                 int nextQueue = Math.min(state.runningProcess.priority + 1, quanta.length - 1);
                 state.runningProcess.priority = nextQueue;
@@ -786,9 +817,24 @@ class Process {
     boolean started = false;
 
     public Process(int id, int arrivalTime, int burstTime) {
-        this.id = id; this.arrivalTime = arrivalTime; this.burstTime = burstTime; this.remainingBurstTime = burstTime;
+        this.id = id;
+        this.arrivalTime = arrivalTime;
+        this.burstTime = burstTime;
+        this.remainingBurstTime = burstTime;
+    }
+
+    /**
+     * Calculates all final time metrics for the process.
+     * @param pCompletionTime The time the process finished execution.
+     */
+    public void calculateFinalMetrics(int pCompletionTime) {
+        this.completionTime = pCompletionTime;
+        this.turnaroundTime = this.completionTime - this.arrivalTime;
+        this.waitingTime = this.turnaroundTime - this.burstTime;
     }
 }
+
+
 
 class GanttChartEntry {
     int processId, startTime, endTime, queueLevel;
