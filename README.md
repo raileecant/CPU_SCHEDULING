@@ -26,22 +26,32 @@ Stop/Pause: The Simulate button will change to Stop. You can click it anytime to
 Review Final Results: When the simulation finishes, the final metrics are displayed. You can then click Export CSV to save the detailed results to a file.
 Reset: Click the Reset All button to clear all processes and results to start a new simulation.
 
-Here is the short description of the Algorithms
-FCFS (First-Come, First-Served): Processes run in the exact order they arrive. It's non-preemptive, meaning a process runs until it is completely finished.
-SJF (Shortest Job First): Selects the waiting process with the smallest total burst time and runs it to completion. It is non-preemptive.
-SRTF (Shortest Remaining Time First): A preemptive version of SJF. It always runs the process with the least time remaining. A running process can be interrupted if a new, shorter job arrives.
-Round Robin (RR): Each process runs for a small, fixed time slice (quantum). If not finished, it's moved to the back of the queue to give other processes a turn, ensuring fairness.
-MLFQ (Multi-Level Feedback Queue): Uses several priority queues. Processes start at high priority and are demoted to lower-priority queues if they use their full time slice. This favors short jobs while preventing long ones from starving.
+
+1. FCFS (First-Come, First-Served): Processes run in the exact order they arrive. It's non-preemptive, meaning a process runs until it is completely finished.
+
+2. SJF (Shortest Job First): Selects the waiting process with the smallest total burst time and runs it to completion. It is non-preemptive.
+
+3. SRTF (Shortest Remaining Time First): A preemptive version of SJF. It always runs the process with the least time remaining. A running process can be interrupted if a new, shorter job arrives.
+
+4. Round Robin (RR): Each process runs for a small, fixed time slice (quantum). If not finished, it's moved to the back of the queue to give other processes a turn, ensuring fairness.
+
+5. MLFQ (Multi-Level Feedback Queue): Uses several priority queues. Processes start at high priority and are demoted to lower-priority queues if they use their full time slice. This favors short jobs while preventing long ones from starving.
+
 
 <img width="1478" height="1011" alt="image" src="https://github.com/user-attachments/assets/ad0c8846-278b-49a1-b442-9d82025a0726" />
 
+
 <img width="1479" height="1017" alt="image" src="https://github.com/user-attachments/assets/dfaa1f12-7d9c-4461-8d97-a6c8867e7e58" />
+
 
 <img width="1481" height="1026" alt="image" src="https://github.com/user-attachments/assets/cac1dac8-65e0-40b2-89e1-b970dd5f386b" />
 
+
 <img width="1477" height="1017" alt="image" src="https://github.com/user-attachments/assets/b67dab17-f9b4-4836-a2f3-13df82dddaaa" />
 
+
 <img width="1479" height="1015" alt="image" src="https://github.com/user-attachments/assets/f3064843-3255-442f-a16a-cfe91684632f" />
+
 
 
 Railee is based on editing the UI of the project.
