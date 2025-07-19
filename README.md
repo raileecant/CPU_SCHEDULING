@@ -52,7 +52,7 @@ Reset: Click the Reset All button to clear all processes and results to start a 
 
 <img width="1479" height="1015" alt="image" src="https://github.com/user-attachments/assets/f3064843-3255-442f-a16a-cfe91684632f" />
 
-
+So far we have yet to encounter a bug
 
 Railee is based on editing the UI of the project.
 Julian on the other hand is focused on Making the algorithm work
