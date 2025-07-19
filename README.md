@@ -34,7 +34,14 @@ Round Robin (RR): Each process runs for a small, fixed time slice (quantum). If 
 MLFQ (Multi-Level Feedback Queue): Uses several priority queues. Processes start at high priority and are demoted to lower-priority queues if they use their full time slice. This favors short jobs while preventing long ones from starving.
 
 <img width="1478" height="1011" alt="image" src="https://github.com/user-attachments/assets/ad0c8846-278b-49a1-b442-9d82025a0726" />
+
 <img width="1479" height="1017" alt="image" src="https://github.com/user-attachments/assets/dfaa1f12-7d9c-4461-8d97-a6c8867e7e58" />
+
+<img width="1481" height="1026" alt="image" src="https://github.com/user-attachments/assets/cac1dac8-65e0-40b2-89e1-b970dd5f386b" />
+
+<img width="1477" height="1017" alt="image" src="https://github.com/user-attachments/assets/b67dab17-f9b4-4836-a2f3-13df82dddaaa" />
+
+<img width="1479" height="1015" alt="image" src="https://github.com/user-attachments/assets/f3064843-3255-442f-a16a-cfe91684632f" />
 
 
 Railee is based on editing the UI of the project.
